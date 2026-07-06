@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: theme('colors.raat');
+  color: theme('colors.body');
+  font-family: theme('fontFamily.sans');
+  /* 16px base prevents iOS zoom-on-focus and keeps touch text readable */
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* ── Leaflet dark tuning — warmed to sit against raat (less blue cast) ── */
+.leaflet-container {
+  background: #14110d;
+  font-family: inherit;
+}
+.leaflet-tile {
+  filter: brightness(0.8) invert(0.93) hue-rotate(196deg) saturate(0.42) sepia(0.22)
+    contrast(0.92);
+}
+.leaflet-control-attribution {
+  background: rgba(16, 20, 24, 0.6) !important;
+  color: theme('colors.muted') !important;
+  font-size: 10px !important;
+}
+.leaflet-control-attribution a {
+  color: theme('colors.neela.DEFAULT') !important;
+}
+
+/* Driver chip pulses softly while heading to pickup */
+.driver-chip-pulse {
+  animation: pulse-soft 1.8s ease-out infinite;
+  border-radius: 9999px;
+}
+@keyframes pulse-soft {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 122, 26, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(255, 122, 26, 0);
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold transition active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-kesar text-[#1B0E03] hover:bg-kesar-dark;
+  }
+  .btn-ghost {
+    @apply btn bg-surface2 text-body hover:bg-hairline;
+  }
+  .btn-danger {
+    @apply btn bg-danger/90 text-white hover:bg-danger;
+  }
+  .card {
+    @apply rounded-2xl border border-hairline bg-surface p-4;
+  }
+  .input {
+    @apply w-full rounded-xl border border-hairline bg-surface2 px-4 py-3 text-base text-body outline-none placeholder:text-muted focus:border-kesar;
+  }
+  /* Loading shimmer block */
+  .skeleton {
+    @apply rounded-xl;
+    background: linear-gradient(
+      100deg,
+      theme('colors.surface2') 40%,
+      theme('colors.hairline') 50%,
+      theme('colors.surface2') 60%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+  /* Big proud fare: "Rs" set small-caps-ish at 60% via <FareAmount> */
+  .font-display {
+    font-family: theme('fontFamily.display');
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .snap-x-mandatory {
+    scroll-snap-type: x mandatory;
+  }
+  .snap-start-item {
+    scroll-snap-align: start;
+  }
+}
+
+/* ── Fare ticket — the signature "Safar" motif ──────────────────────────
+   A card with one perforated edge: dashed rule + two punched semicircle
+   notches cut out with radial-gradient masks (real transparency, so it
+   works over the map too). The perforation sits `--perf` px from the
+   bottom; pair with .ticket-perf as the dashed divider. */
+.ticket {
+  --perf: 56px;
+  position: relative;
+  background: theme('colors.surface');
+  border: 1px solid theme('colors.hairline');
+  border-radius: 16px;
+  -webkit-mask:
+    radial-gradient(circle 9px at 0 calc(100% - var(--perf)), transparent 8.5px, #000 9.5px),
+    radial-gradient(circle 9px at 100% calc(100% - var(--perf)), transparent 8.5px, #000 9.5px);
+  -webkit-mask-composite: source-in;
+  mask:
+    radial-gradient(circle 9px at 0 calc(100% - var(--perf)), transparent 8.5px, #000 9.5px),
+    radial-gradient(circle 9px at 100% calc(100% - var(--perf)), transparent 8.5px, #000 9.5px);
+  mask-composite: intersect;
+}
+.ticket-perf {
+  border-top: 2px dashed theme('colors.hairline');
+  margin: 0 16px;
+}
+
+/* Respect reduced-motion: collapse animations & transitions app-wide */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible focus for keyboard users only */
+:focus-visible {
+  outline: 2px solid theme('colors.kesar.DEFAULT');
+  outline-offset: 2px;
+}

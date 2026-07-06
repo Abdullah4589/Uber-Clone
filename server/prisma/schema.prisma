@@ -1,0 +1,84 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String // "RIDER" | "DRIVER" | "ADMIN"
+  isOnline  Boolean  @default(false)
+  vehicle   String?
+  clerkId   String?  @unique // set for accounts that sign in via Clerk; null for demo/built-in
+  createdAt DateTime @default(now())
+
+  ridesAsRider  Ride[]   @relation("RiderRides")
+  ridesAsDriver Ride[]   @relation("DriverRides")
+  ratingsGiven    Rating[] @relation("RatingsFrom")
+  ratingsReceived Rating[] @relation("RatingsTo")
+  offers          Offer[]  @relation("DriverOffers")
+}
+
+model Ride {
+  id          String   @id @default(cuid())
+  riderId     String
+  driverId    String?
+  status      String   @default("SEARCHING")
+  pickupLat   Float
+  pickupLng   Float
+  pickupLabel String
+  dropLat     Float
+  dropLng     Float
+  dropLabel   String
+  distanceKm  Float
+  durationMin Int
+  fare        Float // rider's offered fare, becomes the agreed fare once matched
+  recommendedFare Float @default(0) // app-suggested fare; 0 on legacy rows (fall back to fare)
+  autoAccept  Boolean  @default(true) // rider opts in: first driver to accept their fare wins instantly
+  tier        String   @default("ECONOMY") // "ECONOMY" | "COMFORT" | "PREMIUM"
+  scheduledAt DateTime? // set for scheduled (e.g. city-to-city) bookings
+  createdAt   DateTime @default(now())
+  startedAt   DateTime? // when the trip actually began (IN_PROGRESS)
+  completedAt DateTime?
+
+  rider   User     @relation("RiderRides", fields: [riderId], references: [id])
+  driver  User?    @relation("DriverRides", fields: [driverId], references: [id])
+  ratings Rating[]
+  offers  Offer[]
+}
+
+// A driver's counter-offer on a SEARCHING ride (fare bargaining).
+model Offer {
+  id        String   @id @default(cuid())
+  rideId    String
+  driverId  String
+  amount    Float
+  status    String   @default("PENDING") // "PENDING" | "ACCEPTED" | "DECLINED"
+  createdAt DateTime @default(now())
+
+  ride   Ride @relation(fields: [rideId], references: [id])
+  driver User @relation("DriverOffers", fields: [driverId], references: [id])
+
+  @@unique([rideId, driverId]) // one live offer per driver per ride (re-offers update it)
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  rideId    String
+  fromId    String
+  toId      String
+  stars     Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  ride Ride @relation(fields: [rideId], references: [id])
+  from User @relation("RatingsFrom", fields: [fromId], references: [id])
+  to   User @relation("RatingsTo", fields: [toId], references: [id])
+}
