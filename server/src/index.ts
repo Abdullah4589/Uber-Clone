@@ -1,9 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
 import { Server } from 'socket.io';
 import { buildRoutes } from './routes';
 import { verifyToken } from './auth';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 app.use(cors());
@@ -26,6 +31,14 @@ io.on('connection', (socket) => {
   socket.on('ride:join', (rideId: string) => socket.join(rideId));
   socket.on('ride:leave', (rideId: string) => socket.leave(rideId));
 });
+
+// Serve the built React frontend in production
+const webDist = join(__dirname, '../../web/dist');
+if (existsSync(webDist)) {
+  app.use(express.static(webDist));
+  // SPA fallback — let React Router handle all non-API routes
+  app.get('*', (_req, res) => res.sendFile(join(webDist, 'index.html')));
+}
 
 const PORT = Number(process.env.PORT) || 4000;
 httpServer.listen(PORT, () => {

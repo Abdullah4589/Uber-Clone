@@ -15,6 +15,15 @@ function homeFor(user: UserPublic | null): string {
   return '/rider';
 }
 
+// If visiting from admin.* subdomain, redirect straight to the agency-owner portal
+if (
+  typeof window !== 'undefined' &&
+  window.location.hostname.startsWith('admin.') &&
+  !window.location.pathname.startsWith('/agency-owner')
+) {
+  window.location.replace('/agency-owner');
+}
+
 export function App() {
   const { user, loading, needsOnboarding } = useAuth();
 

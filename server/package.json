@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
     "db:push": "tsx prisma/turso-push.ts",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "tsx prisma/reset.ts",
