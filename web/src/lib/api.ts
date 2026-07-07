@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-export const api = axios.create({ baseURL: '/api' });
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+export const api = axios.create({ baseURL: API_BASE });
 
 // Use sessionStorage (per-window) rather than localStorage (shared across all
 // tabs/windows of the profile). This lets you run the rider in one window and
