@@ -25,6 +25,7 @@ export function ForgotPasswordForm({
   const { forgotPassword, resetPassword } = useAuth();
   const [step, setStep] = useState<'request' | 'verify' | 'google'>('request');
   const [email, setEmail] = useState(initialEmail);
+  const [devCode, setDevCode] = useState<string | undefined>();
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -35,7 +36,8 @@ export function ForgotPasswordForm({
     setBusy(true);
     setError('');
     try {
-      await forgotPassword(email);
+      const res = await forgotPassword(email);
+      setDevCode(res.devCode);
       setStep('verify');
     } catch (err) {
       const msg = parseError(err);
@@ -116,15 +118,26 @@ export function ForgotPasswordForm({
         </form>
       ) : (
         <form onSubmit={reset} className="card space-y-3">
-          {/* Email sent confirmation */}
-          <div className="rounded-xl border border-hairline bg-surface2 px-4 py-3">
-            <p className="text-sm font-semibold">Check your inbox</p>
-            <p className="mt-0.5 text-xs text-muted">
-              We sent a 6-digit code to{' '}
-              <span className="font-semibold text-body">{email}</span>. It
-              expires in 10 minutes — check spam if you don't see it.
-            </p>
-          </div>
+          {/* Show code on screen when no email provider is configured,
+              otherwise tell the user to check their inbox. */}
+          {devCode ? (
+            <div className="rounded-xl border border-kesar/40 bg-kesar/10 px-4 py-3 text-center">
+              <p className="text-xs text-muted">Your reset code</p>
+              <p className="font-display text-3xl font-black tracking-widest text-kesar">
+                {devCode}
+              </p>
+              <p className="mt-1 text-xs text-muted">Expires in 10 minutes</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-hairline bg-surface2 px-4 py-3">
+              <p className="text-sm font-semibold">Check your inbox</p>
+              <p className="mt-0.5 text-xs text-muted">
+                We sent a 6-digit code to{' '}
+                <span className="font-semibold text-body">{email}</span>. It
+                expires in 10 minutes — check spam if you don't see it.
+              </p>
+            </div>
+          )}
 
           <input
             className="input tracking-widest"

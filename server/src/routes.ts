@@ -111,9 +111,11 @@ export function buildRoutes(io: Server): Router {
       const detail = (err as Error).message ?? String(err);
       console.error('[mailer] failed to send reset email:', detail);
       resetCodes.delete(email);
-      return res.status(500).json({ error: `Email error: ${detail}` });
+      return res.status(500).json({ error: `Could not send reset email: ${detail}` });
     }
-    res.json({ sent: true });
+    // When no email provider is configured the mailer logs the code locally.
+    // Return it to the UI so the user can still complete the reset.
+    res.json({ sent: true, devCode: emailEnabled ? undefined : code });
   });
 
   r.post('/auth/reset-password', async (req, res) => {
