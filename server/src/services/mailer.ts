@@ -1,23 +1,21 @@
-import { Resend } from 'resend';
+import sgMail from '@sendgrid/mail';
 
-const apiKey = process.env.RESEND_API_KEY;
+const apiKey = process.env.SENDGRID_API_KEY;
 export const emailEnabled = !!apiKey;
 
-const resend = apiKey ? new Resend(apiKey) : null;
+if (apiKey) sgMail.setApiKey(apiKey);
 
-// The "from" address must be from a domain verified in your Resend dashboard.
-// Until you verify a domain, use Resend's shared test address — emails will
-// only deliver to the address you signed up with on resend.com.
-const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev';
+// Must match the sender email you verified in SendGrid Single Sender Verification.
+const FROM = process.env.SENDGRID_FROM ?? 'abdullahhaleem530@gmail.com';
 
 export async function sendPasswordResetEmail(to: string, code: string): Promise<void> {
-  if (!resend) {
-    console.log(`[mailer] no RESEND_API_KEY — reset code for ${to}: ${code}`);
+  if (!apiKey) {
+    console.log(`[mailer] no SENDGRID_API_KEY — reset code for ${to}: ${code}`);
     return;
   }
 
-  const { error } = await resend.emails.send({
-    from: `RideShare PK <${FROM}>`,
+  await sgMail.send({
+    from: { name: 'RideShare PK', email: FROM },
     to,
     subject: 'Your RideShare PK password reset code',
     text: `Your password reset code is: ${code}\n\nThis code expires in 10 minutes. If you did not request this, ignore this email.`,
@@ -40,6 +38,4 @@ export async function sendPasswordResetEmail(to: string, code: string): Promise<
       </div>
     `,
   });
-
-  if (error) throw new Error(error.message);
 }
