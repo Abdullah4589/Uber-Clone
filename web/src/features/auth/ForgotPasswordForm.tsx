@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useAuth } from '../../lib/auth';
 import { BarButton } from '../../components/BarButton';
 import { PasswordInput } from '../../components/PasswordInput';
+import { ClerkAuthButtons } from './ClerkAuthButtons';
 
-function errorMessage(e: unknown, fallback: string): string {
-  const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
-  return msg || fallback;
+function parseError(e: unknown): string {
+  return (e as { response?: { data?: { error?: string } } })?.response?.data?.error
+    ?? (e as { message?: string })?.message
+    ?? 'Something went wrong';
 }
 
 /**
@@ -21,7 +23,7 @@ export function ForgotPasswordForm({
   onBack: () => void;
 }) {
   const { forgotPassword, resetPassword } = useAuth();
-  const [step, setStep] = useState<'request' | 'verify'>('request');
+  const [step, setStep] = useState<'request' | 'verify' | 'google'>('request');
   const [email, setEmail] = useState(initialEmail);
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
@@ -36,7 +38,12 @@ export function ForgotPasswordForm({
       await forgotPassword(email);
       setStep('verify');
     } catch (err) {
-      setError(errorMessage(err, 'Could not send a reset code'));
+      const msg = parseError(err);
+      if (msg.toLowerCase().includes('google')) {
+        setStep('google');
+      } else {
+        setError(msg);
+      }
     } finally {
       setBusy(false);
     }
@@ -50,7 +57,7 @@ export function ForgotPasswordForm({
       await resetPassword(email, code, password);
       // On success the auth session is applied and the app navigates away.
     } catch (err) {
-      setError(errorMessage(err, 'Could not reset your password'));
+      setError(parseError(err));
     } finally {
       setBusy(false);
     }
@@ -69,7 +76,26 @@ export function ForgotPasswordForm({
         <h2 className="font-display text-lg font-bold">Reset password</h2>
       </div>
 
-      {step === 'request' ? (
+      {step === 'google' ? (
+        <div className="card space-y-4">
+          <div className="text-center">
+            <div className="mb-2 text-3xl">🔑</div>
+            <p className="font-semibold">This account uses Google sign-in</p>
+            <p className="mt-1 text-sm text-muted">
+              <span className="font-medium text-body">{email}</span> was signed up
+              with Google. There's no password to reset — just sign in with Google below.
+            </p>
+          </div>
+          <ClerkAuthButtons />
+          <button
+            type="button"
+            onClick={() => { setStep('request'); setError(''); }}
+            className="w-full text-center text-xs font-semibold text-muted hover:text-body"
+          >
+            Use a different email
+          </button>
+        </div>
+      ) : step === 'request' ? (
         <form onSubmit={requestCode} className="card space-y-3">
           <p className="text-sm text-muted">
             Enter your account email and we'll send you a 6-digit reset code.
