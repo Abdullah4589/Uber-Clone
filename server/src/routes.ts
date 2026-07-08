@@ -108,9 +108,10 @@ export function buildRoutes(io: Server): Router {
       );
       await Promise.race([sendPasswordResetEmail(email, code), timeout]);
     } catch (err) {
-      console.error('[mailer] failed to send reset email:', (err as Error).message);
+      const detail = (err as Error).message ?? String(err);
+      console.error('[mailer] failed to send reset email:', detail);
       resetCodes.delete(email);
-      return res.status(500).json({ error: 'Could not send reset email — please try again shortly.' });
+      return res.status(500).json({ error: `Email error: ${detail}` });
     }
     res.json({ sent: true });
   });
