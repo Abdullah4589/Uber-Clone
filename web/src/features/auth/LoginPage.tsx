@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../../lib/auth';
 import { BarButton } from '../../components/BarButton';
+import { PasswordInput } from '../../components/PasswordInput';
 import { ClerkAuthButtons } from './ClerkAuthButtons';
+import { ForgotPasswordForm } from './ForgotPasswordForm';
 
 const clerkEnabled = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -21,7 +23,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'RIDER' | 'DRIVER'>('RIDER');
   const [vehicle, setVehicle] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [forgot, setForgot] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -82,6 +84,16 @@ export function LoginPage() {
         </div>
 
 
+        {forgot ? (
+          <ForgotPasswordForm
+            initialEmail={email}
+            onBack={() => {
+              setForgot(false);
+              setError('');
+            }}
+          />
+        ) : (
+        <>
         {clerkEnabled && (
           <div className="mb-4">
             <ClerkAuthButtons />
@@ -150,26 +162,24 @@ export function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <div className="relative">
-            <input
-              className="input pr-12"
-              type={showPassword ? 'text' : 'password'}
-              placeholder={mode === 'signup' ? 'Password (min 6 characters)' : 'Password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={mode === 'signup' ? 6 : undefined}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              aria-pressed={showPassword}
-              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted transition hover:text-body active:scale-90"
-            >
-              <EyeIcon off={showPassword} />
-            </button>
-          </div>
+          <PasswordInput
+            placeholder={mode === 'signup' ? 'Password (min 6 characters)' : 'Password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={mode === 'signup' ? 6 : undefined}
+            required
+          />
+          {mode === 'signin' && (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => setForgot(true)}
+                className="text-xs font-semibold text-neela hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
           {mode === 'signup' && role === 'DRIVER' && (
             <input
               className="input"
@@ -190,32 +200,13 @@ export function LoginPage() {
                   : 'Sign up to ride'}
           </BarButton>
         </form>
+        </>
+        )}
 
         <p className="mt-6 text-center text-xs text-muted">
           Prototype — payments, SMS and GPS are mocked.
         </p>
       </div>
     </div>
-  );
-}
-
-/** Eye / eye-off toggle glyph for the password field. */
-function EyeIcon({ off }: { off: boolean }) {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" />
-      {off && <line x1="3" y1="3" x2="21" y2="21" />}
-    </svg>
   );
 }

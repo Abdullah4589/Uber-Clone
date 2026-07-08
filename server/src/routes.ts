@@ -81,6 +81,55 @@ export function buildRoutes(io: Server): Router {
     res.json(await toPublicUser(user));
   });
 
+  // ---- Password reset (mock) ----
+  // There's no email provider in this prototype, so the reset code that would
+  // normally be emailed is returned directly to the client as `devCode`. Codes
+  // are held in-memory (like the simulator) and expire after 10 minutes.
+  const resetCodes = new Map<string, { code: string; expires: number }>();
+  const RESET_TTL_MS = 10 * 60 * 1000;
+
+  r.post('/auth/forgot', async (req, res) => {
+    const email = String(req.body?.email ?? '').trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ error: 'Enter a valid email address' });
+    }
+    const user = await prisma.user.findUnique({ where: { email } });
+    // Clerk/social accounts have no local password — send them back to Google.
+    if (user && user.password.startsWith('clerk:')) {
+      return res.status(400).json({
+        error: 'This account uses Google sign-in — use “Continue with Google”.',
+      });
+    }
+    // Don't reveal whether an account exists; only mint a code when it does.
+    if (!user) return res.json({ sent: true });
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    resetCodes.set(email, { code, expires: Date.now() + RESET_TTL_MS });
+    // In production this would be emailed. Prototype: hand it back to the UI.
+    res.json({ sent: true, devCode: code });
+  });
+
+  r.post('/auth/reset-password', async (req, res) => {
+    const email = String(req.body?.email ?? '').trim().toLowerCase();
+    const code = String(req.body?.code ?? '').trim();
+    const password = req.body?.password;
+    if (typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    const entry = resetCodes.get(email);
+    if (!entry || entry.code !== code || entry.expires < Date.now()) {
+      return res.status(400).json({ error: 'Invalid or expired reset code' });
+    }
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ error: 'Account not found' });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: await bcrypt.hash(password, 10) },
+    });
+    resetCodes.delete(email);
+    const token = signToken({ id: user.id, role: user.role as 'RIDER' | 'DRIVER' | 'ADMIN' });
+    res.json({ token, user: await toPublicUser(user) });
+  });
+
   // ---- Clerk auth bridge ----
   // The frontend authenticates with Clerk, then exchanges the Clerk session
   // token for our own app JWT so the entire ride flow stays unchanged.

@@ -21,6 +21,8 @@ interface AuthCtx {
   needsOnboarding: boolean;
   login: (email: string, password: string) => Promise<UserPublic>;
   register: (input: RegisterInput) => Promise<UserPublic>;
+  forgotPassword: (email: string) => Promise<{ devCode?: string }>;
+  resetPassword: (email: string, code: string, password: string) => Promise<UserPublic>;
   completeOnboarding: (role: 'RIDER' | 'DRIVER', vehicle?: string) => Promise<UserPublic>;
   logout: () => void;
   refresh: () => Promise<void>;
@@ -74,6 +76,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (input: RegisterInput) => {
     const r = await api.post('/auth/register', input);
+    applySession(r.data.token, r.data.user);
+    return r.data.user as UserPublic;
+  };
+
+  // Request a password-reset code. In this mocked prototype the server returns
+  // the code (`devCode`) directly instead of emailing it.
+  const forgotPassword = async (email: string) => {
+    const r = await api.post('/auth/forgot', { email });
+    return { devCode: r.data?.devCode as string | undefined };
+  };
+
+  // Set a new password with the reset code, then sign the user straight in.
+  const resetPassword = async (email: string, code: string, password: string) => {
+    const r = await api.post('/auth/reset-password', { email, code, password });
     applySession(r.data.token, r.data.user);
     return r.data.user as UserPublic;
   };
@@ -134,6 +150,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         needsOnboarding,
         login,
         register,
+        forgotPassword,
+        resetPassword,
         completeOnboarding,
         logout,
         refresh,
