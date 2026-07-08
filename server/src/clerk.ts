@@ -29,9 +29,12 @@ export async function verifyClerkToken(token: string): Promise<ClerkIdentity> {
     user.emailAddresses[0]?.emailAddress ??
     '';
 
-  // Reject tokens from accounts that haven't verified their email address.
-  const verified = primaryEmail?.verification?.status === 'verified';
-  if (!verified) {
+  // OAuth providers (Google, Facebook, Microsoft, X) verify identity themselves,
+  // so trust any account that signed in via an external account. Only enforce
+  // Clerk's own email verification for email/password accounts.
+  const signedInViaOAuth = user.externalAccounts.length > 0;
+  const emailVerified = primaryEmail?.verification?.status === 'verified';
+  if (!signedInViaOAuth && !emailVerified) {
     throw new Error('Email address is not verified. Please verify your email before signing in.');
   }
 
