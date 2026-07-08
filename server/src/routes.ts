@@ -78,7 +78,13 @@ export function buildRoutes(io: Server): Router {
     if (!user) return res.json({ sent: true });
     const code = String(Math.floor(100000 + Math.random() * 900000));
     resetCodes.set(email, { code, expires: Date.now() + RESET_TTL_MS });
-    await sendPasswordResetEmail(email, code);
+    try {
+      await sendPasswordResetEmail(email, code);
+    } catch (err) {
+      console.error('[mailer] failed to send reset email:', err);
+      resetCodes.delete(email);
+      return res.status(500).json({ error: 'Failed to send reset email. Check server email configuration.' });
+    }
     res.json({ sent: true });
   });
 
