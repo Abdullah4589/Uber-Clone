@@ -8,6 +8,8 @@ import { SwitchRow } from '../../components/ui';
 /** Booking sheet content: greeting → where-to → trip setup. */
 export function HomeSheet({
   firstName,
+  rideMode,
+  setRideMode,
   pickup,
   drop,
   locating,
@@ -33,6 +35,8 @@ export function HomeSheet({
   scheduleInPast,
 }: {
   firstName: string;
+  rideMode: 'CITY' | 'INTERCITY';
+  setRideMode: (m: 'CITY' | 'INTERCITY') => void;
   pickup: GeoPlace | null;
   drop: GeoPlace | null;
   locating: boolean;
@@ -57,11 +61,42 @@ export function HomeSheet({
   minDate: string;
   scheduleInPast: boolean;
 }) {
+  const intercity = rideMode === 'INTERCITY';
   return (
     <div className="space-y-4 pb-24">
       <h2 className="font-display text-xl font-bold">
         Salam, {firstName} <span aria-hidden>👋</span>
       </h2>
+
+      {/* Trip kind: within-city vs city-to-city */}
+      <div className="flex rounded-xl bg-surface2 p-1 text-sm font-semibold">
+        <button
+          className={`min-h-[44px] flex-1 rounded-lg transition ${
+            !intercity ? 'bg-kesar text-[#1B0E03]' : 'text-muted'
+          }`}
+          onClick={() => setRideMode('CITY')}
+        >
+          🏙️ Inside the city
+        </button>
+        <button
+          className={`min-h-[44px] flex-1 rounded-lg transition ${
+            intercity ? 'bg-kesar text-[#1B0E03]' : 'text-muted'
+          }`}
+          onClick={() => setRideMode('INTERCITY')}
+        >
+          🛣️ City to city
+        </button>
+      </div>
+
+      {/* City-to-city shows the pickup point up front so both ends are explicit. */}
+      {intercity && (
+        <PickupRow
+          pickup={pickup}
+          locating={locating}
+          locError={locError}
+          onEdit={() => onOpenSearch('pickup')}
+        />
+      )}
 
       {/* Where-to search pill */}
       <button
@@ -75,7 +110,15 @@ export function HomeSheet({
           <span className="min-w-0 flex-1 truncate font-semibold">{drop.label}</span>
         ) : (
           <span className="min-w-0 flex-1 truncate text-muted">
-            Kahan jana hai? <span className="opacity-60">/ Where to?</span>
+            {intercity ? (
+              <>
+                Kis sheher jana hai? <span className="opacity-60">/ Which city?</span>
+              </>
+            ) : (
+              <>
+                Kahan jana hai? <span className="opacity-60">/ Where to?</span>
+              </>
+            )}
           </span>
         )}
         {drop && <span className="text-xs font-semibold text-neela">Change</span>}
@@ -101,27 +144,15 @@ export function HomeSheet({
 
       {drop && (
         <>
-          {/* Pickup row */}
-          <div className="rounded-2xl border border-hairline bg-surface2">
-            <button
-              onClick={() => onOpenSearch('pickup')}
-              className="flex min-h-[52px] w-full items-center gap-3 px-4 py-3 text-left"
-            >
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-kesar" />
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs text-muted">Pickup</span>
-                <span className="block truncate text-sm font-medium">
-                  {locating ? 'Locating…' : (pickup?.label ?? 'Set your pickup point')}
-                </span>
-              </span>
-              <span className="text-xs font-semibold text-kesar">Edit</span>
-            </button>
-            {locError && (
-              <p className="px-4 pb-3 text-xs text-warn">
-                {locError} — tap Edit to search or drop a pin instead.
-              </p>
-            )}
-          </div>
+          {/* Pickup row — already shown above in city-to-city mode. */}
+          {!intercity && (
+            <PickupRow
+              pickup={pickup}
+              locating={locating}
+              locError={locError}
+              onEdit={() => onOpenSearch('pickup')}
+            />
+          )}
 
           {/* Now / Later segmented control */}
           <div className="flex rounded-xl bg-surface2 p-1 text-sm font-semibold">
@@ -250,6 +281,42 @@ export function HomeSheet({
             </p>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+/** Pickup-point card: current location by default, tap Edit to change. */
+function PickupRow({
+  pickup,
+  locating,
+  locError,
+  onEdit,
+}: {
+  pickup: GeoPlace | null;
+  locating: boolean;
+  locError: string | null;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-hairline bg-surface2">
+      <button
+        onClick={onEdit}
+        className="flex min-h-[52px] w-full items-center gap-3 px-4 py-3 text-left"
+      >
+        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-kesar" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-xs text-muted">Pickup</span>
+          <span className="block truncate text-sm font-medium">
+            {locating ? 'Locating…' : (pickup?.label ?? 'Set your pickup point')}
+          </span>
+        </span>
+        <span className="text-xs font-semibold text-kesar">Edit</span>
+      </button>
+      {locError && (
+        <p className="px-4 pb-3 text-xs text-warn">
+          {locError} — tap Edit to search or drop a pin instead.
+        </p>
       )}
     </div>
   );

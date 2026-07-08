@@ -47,6 +47,10 @@ export function RiderApp() {
   const [mapPick, setMapPick] = useState(false);
   const [recents, setRecents] = useState<GeoPlace[]>([]);
 
+  // Within-city vs city-to-city (intercity). Purely a UX helper for choosing
+  // locations — the backend treats every ride the same (pickup/drop coords).
+  const [rideMode, setRideMode] = useState<'CITY' | 'INTERCITY'>('CITY');
+
   const [tier, setTier] = useState<RideTier>('ECONOMY');
   const [estimate, setEstimate] = useState<FareEstimate | null>(null);
   const [offeredFare, setOfferedFare] = useState<number | null>(null);
@@ -362,6 +366,8 @@ export function RiderApp() {
               {!ride ? (
                 <HomeSheet
                   firstName={(user?.name ?? 'there').split(' ')[0]}
+                  rideMode={rideMode}
+                  setRideMode={setRideMode}
                   pickup={pickup}
                   drop={drop}
                   locating={locating}
