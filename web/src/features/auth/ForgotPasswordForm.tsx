@@ -9,9 +9,9 @@ function errorMessage(e: unknown, fallback: string): string {
 }
 
 /**
- * Two-step password reset. Step 1 requests a code by email; because this
- * prototype has no email provider, the server returns the code directly and we
- * show it here. Step 2 sets a new password and signs the user straight in.
+ * Two-step password reset.
+ * Step 1: enter email → server emails a 6-digit code (expires in 10 min).
+ * Step 2: enter the code + new password → signed in automatically.
  */
 export function ForgotPasswordForm({
   initialEmail,
@@ -23,7 +23,6 @@ export function ForgotPasswordForm({
   const { forgotPassword, resetPassword } = useAuth();
   const [step, setStep] = useState<'request' | 'verify'>('request');
   const [email, setEmail] = useState(initialEmail);
-  const [devCode, setDevCode] = useState<string | undefined>();
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -34,8 +33,7 @@ export function ForgotPasswordForm({
     setBusy(true);
     setError('');
     try {
-      const { devCode } = await forgotPassword(email);
-      setDevCode(devCode);
+      await forgotPassword(email);
       setStep('verify');
     } catch (err) {
       setError(errorMessage(err, 'Could not send a reset code'));
@@ -74,7 +72,7 @@ export function ForgotPasswordForm({
       {step === 'request' ? (
         <form onSubmit={requestCode} className="card space-y-3">
           <p className="text-sm text-muted">
-            Enter your account email and we’ll send you a reset code.
+            Enter your account email and we'll send you a 6-digit reset code.
           </p>
           <input
             className="input"
@@ -87,27 +85,21 @@ export function ForgotPasswordForm({
           />
           {error && <p className="text-sm text-danger">{error}</p>}
           <BarButton type="submit" disabled={busy}>
-            {busy ? 'Please wait…' : 'Send reset code'}
+            {busy ? 'Sending…' : 'Send reset code'}
           </BarButton>
         </form>
       ) : (
         <form onSubmit={reset} className="card space-y-3">
-          {devCode ? (
-            <div className="rounded-xl border border-kesar/40 bg-kesar/10 px-3 py-2 text-sm">
-              <span className="text-muted">Demo — your reset code is </span>
-              <span className="font-display text-base font-bold tracking-widest text-kesar">
-                {devCode}
-              </span>
-              <p className="mt-1 text-xs text-muted">
-                (No email is sent in this prototype.)
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-muted">
-              If an account exists for <span className="font-semibold">{email}</span>, a reset
-              code has been sent.
+          {/* Email sent confirmation */}
+          <div className="rounded-xl border border-hairline bg-surface2 px-4 py-3">
+            <p className="text-sm font-semibold">Check your inbox</p>
+            <p className="mt-0.5 text-xs text-muted">
+              We sent a 6-digit code to{' '}
+              <span className="font-semibold text-body">{email}</span>. It
+              expires in 10 minutes — check spam if you don't see it.
             </p>
-          )}
+          </div>
+
           <input
             className="input tracking-widest"
             inputMode="numeric"
@@ -125,18 +117,19 @@ export function ForgotPasswordForm({
             required
           />
           {error && <p className="text-sm text-danger">{error}</p>}
-          <BarButton type="submit" disabled={busy}>
+          <BarButton type="submit" disabled={busy || code.length < 6}>
             {busy ? 'Please wait…' : 'Reset password & sign in'}
           </BarButton>
           <button
             type="button"
             onClick={() => {
               setStep('request');
+              setCode('');
               setError('');
             }}
             className="w-full text-center text-xs font-semibold text-muted hover:text-body"
           >
-            Use a different email
+            Resend code or use a different email
           </button>
         </form>
       )}

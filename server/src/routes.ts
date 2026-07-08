@@ -15,6 +15,7 @@ import {
   type RideTier,
 } from '@uber-clone/shared';
 import * as sim from './services/simulator';
+import { sendPasswordResetEmail } from './services/mailer';
 
 export function buildRoutes(io: Server): Router {
   const r = Router();
@@ -56,10 +57,8 @@ export function buildRoutes(io: Server): Router {
     res.json(await toPublicUser(user));
   });
 
-  // ---- Password reset (mock) ----
-  // There's no email provider in this prototype, so the reset code that would
-  // normally be emailed is returned directly to the client as `devCode`. Codes
-  // are held in-memory (like the simulator) and expire after 10 minutes.
+  // ---- Password reset ----
+  // Codes are held in-memory and expire after 10 minutes.
   const resetCodes = new Map<string, { code: string; expires: number }>();
   const RESET_TTL_MS = 10 * 60 * 1000;
 
@@ -75,12 +74,12 @@ export function buildRoutes(io: Server): Router {
         error: 'This account uses Google sign-in — use “Continue with Google”.',
       });
     }
-    // Don't reveal whether an account exists; only mint a code when it does.
+    // Always respond with the same shape so we don't reveal whether an account exists.
     if (!user) return res.json({ sent: true });
     const code = String(Math.floor(100000 + Math.random() * 900000));
     resetCodes.set(email, { code, expires: Date.now() + RESET_TTL_MS });
-    // In production this would be emailed. Prototype: hand it back to the UI.
-    res.json({ sent: true, devCode: code });
+    await sendPasswordResetEmail(email, code);
+    res.json({ sent: true });
   });
 
   r.post('/auth/reset-password', async (req, res) => {
