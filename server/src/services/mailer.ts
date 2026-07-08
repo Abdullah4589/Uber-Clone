@@ -1,37 +1,23 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const user = process.env.EMAIL_USER;
-const pass = process.env.EMAIL_PASS;
+const apiKey = process.env.RESEND_API_KEY;
+export const emailEnabled = !!apiKey;
 
-export const emailEnabled = !!(user && pass);
+const resend = apiKey ? new Resend(apiKey) : null;
 
-const transporter = emailEnabled
-  ? nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // STARTTLS — port 465 is often blocked on cloud hosts
-      auth: { user, pass },
-      connectionTimeout: 8_000,
-      greetingTimeout: 8_000,
-      socketTimeout: 10_000,
-    })
-  : null;
-
-// Verify SMTP credentials once at startup so misconfiguration is caught early.
-if (transporter) {
-  transporter.verify().catch((err) => {
-    console.error('[mailer] SMTP verify failed — reset emails will not work:', err.message);
-  });
-}
+// The "from" address must be from a domain verified in your Resend dashboard.
+// Until you verify a domain, use Resend's shared test address — emails will
+// only deliver to the address you signed up with on resend.com.
+const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev';
 
 export async function sendPasswordResetEmail(to: string, code: string): Promise<void> {
-  if (!transporter) {
-    console.log(`[mailer] no credentials — reset code for ${to}: ${code}`);
+  if (!resend) {
+    console.log(`[mailer] no RESEND_API_KEY — reset code for ${to}: ${code}`);
     return;
   }
 
-  await transporter.sendMail({
-    from: `"RideShare PK" <${user}>`,
+  const { error } = await resend.emails.send({
+    from: `RideShare PK <${FROM}>`,
     to,
     subject: 'Your RideShare PK password reset code',
     text: `Your password reset code is: ${code}\n\nThis code expires in 10 minutes. If you did not request this, ignore this email.`,
@@ -54,4 +40,6 @@ export async function sendPasswordResetEmail(to: string, code: string): Promise<
       </div>
     `,
   });
+
+  if (error) throw new Error(error.message);
 }
