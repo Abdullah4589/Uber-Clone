@@ -1,11 +1,13 @@
 import { useSignIn, useSignUp } from '@clerk/clerk-react';
 import { BarButton } from '../../components/BarButton';
 
-type OAuthProvider = 'oauth_google' | 'oauth_facebook';
+type OAuthProvider = 'oauth_google' | 'oauth_facebook' | 'oauth_microsoft' | 'oauth_x';
 
 const PROVIDERS: { strategy: OAuthProvider; label: string; icon: JSX.Element }[] = [
-  { strategy: 'oauth_google',   label: 'Continue with Google',   icon: <GoogleIcon /> },
-  { strategy: 'oauth_facebook', label: 'Continue with Facebook', icon: <FacebookIcon /> },
+  { strategy: 'oauth_google',    label: 'Continue with Google',    icon: <GoogleIcon /> },
+  { strategy: 'oauth_facebook',  label: 'Continue with Facebook',  icon: <FacebookIcon /> },
+  { strategy: 'oauth_microsoft', label: 'Continue with Microsoft', icon: <MicrosoftIcon /> },
+  { strategy: 'oauth_x',        label: 'Continue with X',         icon: <XIcon /> },
 ];
 
 const CALLBACK_URL = `${window.location.origin}/sso-callback`;
@@ -65,6 +67,25 @@ function FacebookIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" aria-hidden>
       <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073Z"/>
+    </svg>
+  );
+}
+
+function MicrosoftIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+      <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+      <rect x="13" y="1" width="10" height="10" fill="#7FBA00"/>
+      <rect x="1" y="13" width="10" height="10" fill="#00A4EF"/>
+      <rect x="13" y="13" width="10" height="10" fill="#FFB900"/>
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.73-8.835L2.02 2.25h6.962l4.265 5.638L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/>
     </svg>
   );
 }
