@@ -43,8 +43,8 @@ PORT=4000
 JWT_SECRET=your-secret-key-here
 ```
 
-**Optional: Clerk authentication**  
-For modern SSO (Google, GitHub, email), create `web/.env.local`:
+**Clerk authentication (required for login)**  
+Create `web/.env.local`:
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
@@ -54,7 +54,7 @@ And add to `server/.env`:
 CLERK_SECRET_KEY=sk_test_...
 ```
 
-The app works without Clerk — it falls back to demo accounts. If Clerk keys are not set, the app skips the Clerk UI and uses built-in auth only.
+The login page shows **Sign in with Google** and **Sign up with Google** only. Demo accounts can still be used directly via the API for testing.
 
 ## Run it locally
 
@@ -99,11 +99,9 @@ Ride start time (`startedAt`) is recorded when the trip begins; finish time (`co
 
 ### UI Screenshots
 
-**Login Page (Clean)** — No demo buttons. Enter credentials or sign in with Clerk (Google, GitHub, email).
+**Login Page** — Google sign-in only.
 - Dark theme with centered form
-- Email and password fields
-- "Sign in with Clerk" button for OAuth
-- Fallback email/password authentication
+- "Sign in with Google" and "Sign up with Google" buttons (Clerk)
 - Clean, minimalist Uber-style design
 
 ![Login Page](docs/screenshots/login-page.png)
@@ -215,7 +213,7 @@ Log in as `admin@rideshare.com` to access `/admin`:
 
 ## New Features (v2)
 
-- ✅ **Clerk Authentication** — Modern SSO (Google, GitHub, email) with automatic app JWT exchange
+- ✅ **Clerk Authentication** — Google sign-in/sign-up with automatic app JWT exchange
 - ✅ **Real-time Geolocation** — Auto-detect rider pickup location via browser Geolocation API
 - ✅ **Live Destination Search** — Nominatim autocomplete with 400ms debounce, Pakistan-biased
 - ✅ **10-second Driver Request Timer** — Countdown bar shrinks red as time runs out
@@ -310,26 +308,17 @@ The app comes with **two authentication modes**:
 - Credentials hardcoded in DB (seeded at `npm run db:setup`)
 - Fast for testing/prototyping
 
-### Mode 2: Clerk (Modern SSO)
-If Clerk keys are present, the login page shows:
-- **"Sign in with Clerk"** button (Google, GitHub, email)
-- **"Create an account"** with role selection (Rider/Driver)
-- **Onboarding screen** for first-time Clerk users (role + vehicle)
+### Mode 2: Clerk (Google sign-in)
+If Clerk keys are present, the login page shows **Sign in with Google** and **Sign up with Google**. First-time users are taken through an onboarding screen to pick their role (Rider/Driver) and vehicle.
 
 **Setup Clerk (free tier):**
 1. Create account at https://clerk.com
-2. Create an app, grab publishable and secret keys
+2. Create an app, enable Google social connection
 3. Set `VITE_CLERK_PUBLISHABLE_KEY` (web) and `CLERK_SECRET_KEY` (server)
 4. Restart the app
 
 **Multi-window caveat:**  
-Clerk sessions are per-browser-profile, not per-window. To run rider + driver simultaneously:
-- Use **two different browsers** (Chrome + Firefox), or
-- Use **normal + incognito window**, or
-- Use the **demo accounts** (which use per-window `sessionStorage`)
-
-**Mixing Clerk + demo:**  
-Both auth methods work side-by-side. Clerk users exist in the same DB as demo users. Admin (if a Clerk user) must be promoted manually in the DB (`UPDATE User SET role='ADMIN' WHERE email='...'`).
+Clerk sessions are per-browser-profile, not per-window. To run rider + driver simultaneously use two different browsers or normal + incognito. Demo accounts use per-window `sessionStorage` so they don't have this limitation.
 
 ## Notes
 
