@@ -4,14 +4,6 @@ import type { UserPublic } from '@uber-clone/shared';
 import { api, setAuthToken } from './api';
 import { disconnectSocket } from './socket';
 
-export interface RegisterInput {
-  name: string;
-  email: string;
-  password: string;
-  role: 'RIDER' | 'DRIVER';
-  vehicle?: string;
-}
-
 const clerkEnabled = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 interface AuthCtx {
@@ -20,7 +12,6 @@ interface AuthCtx {
   loading: boolean;
   needsOnboarding: boolean;
   login: (email: string, password: string) => Promise<UserPublic>;
-  register: (input: RegisterInput) => Promise<UserPublic>;
   forgotPassword: (email: string) => Promise<{ devCode?: string }>;
   resetPassword: (email: string, code: string, password: string) => Promise<UserPublic>;
   completeOnboarding: (role: 'RIDER' | 'DRIVER', vehicle?: string) => Promise<UserPublic>;
@@ -70,12 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const r = await api.post('/auth/login', { email, password });
-    applySession(r.data.token, r.data.user);
-    return r.data.user as UserPublic;
-  };
-
-  const register = async (input: RegisterInput) => {
-    const r = await api.post('/auth/register', input);
     applySession(r.data.token, r.data.user);
     return r.data.user as UserPublic;
   };
@@ -149,7 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         needsOnboarding,
         login,
-        register,
         forgotPassword,
         resetPassword,
         completeOnboarding,

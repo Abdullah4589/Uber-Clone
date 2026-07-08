@@ -42,37 +42,12 @@ export function buildRoutes(io: Server): Router {
     res.json({ token, user: await toPublicUser(user) });
   });
 
-  r.post('/auth/register', async (req, res) => {
-    const { name, email, password, role, vehicle } = req.body ?? {};
-    const cleanName = String(name ?? '').trim();
-    const cleanEmail = String(email ?? '').trim().toLowerCase();
-    if (!cleanName || !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
-      return res.status(400).json({ error: 'Valid name and email are required' });
-    }
-    if (typeof password !== 'string' || password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
-    if (role !== 'RIDER' && role !== 'DRIVER') {
-      return res.status(400).json({ error: 'Role must be RIDER or DRIVER' });
-    }
-    const cleanVehicle = String(vehicle ?? '').trim();
-    if (role === 'DRIVER' && !cleanVehicle) {
-      return res.status(400).json({ error: 'Drivers must provide a vehicle' });
-    }
-    const existing = await prisma.user.findUnique({ where: { email: cleanEmail } });
-    if (existing) return res.status(409).json({ error: 'An account with this email already exists' });
-
-    const user = await prisma.user.create({
-      data: {
-        name: cleanName,
-        email: cleanEmail,
-        password: await bcrypt.hash(password, 10),
-        role,
-        vehicle: role === 'DRIVER' ? cleanVehicle : null,
-      },
+  r.post('/auth/register', (_req, res) => {
+    // Registration via this endpoint is disabled — new accounts are created
+    // through Clerk (Google sign-in) which verifies the email address.
+    res.status(403).json({
+      error: 'Direct registration is disabled. Please sign up with Google.',
     });
-    const token = signToken({ id: user.id, role: user.role as 'RIDER' | 'DRIVER' | 'ADMIN' });
-    res.json({ token, user: await toPublicUser(user) });
   });
 
   r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
