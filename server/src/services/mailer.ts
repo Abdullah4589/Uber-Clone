@@ -1,4 +1,9 @@
 import nodemailer from 'nodemailer';
+import { setDefaultResultOrder } from 'dns';
+
+// Railway's network stack doesn't route IPv6 to external SMTP servers.
+// Force IPv4 so smtp.gmail.com resolves to a reachable address.
+setDefaultResultOrder('ipv4first');
 
 const user = process.env.EMAIL_USER;
 const pass = process.env.EMAIL_PASS;
