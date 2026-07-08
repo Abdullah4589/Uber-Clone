@@ -3,6 +3,7 @@ import { useAuth as useClerkSession } from '@clerk/clerk-react';
 import type { UserPublic } from '@uber-clone/shared';
 import { api, setAuthToken } from './api';
 import { disconnectSocket } from './socket';
+import { toast } from '../components/Toast';
 
 const clerkEnabled = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -176,7 +177,13 @@ function ClerkBridge() {
     }
     getToken()
       .then((t) => (t ? auth._clerkExchange(t) : undefined))
-      .catch(() => {})
+      .catch((err) => {
+        const msg: string =
+          err?.response?.data?.error ?? err?.message ?? 'Sign-in failed';
+        toast(msg, 'error');
+        // Sign them out of Clerk so they land back on the login page cleanly.
+        signOut().catch(() => {});
+      })
       .finally(() => auth._setClerkResolved(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, isSignedIn, auth.token, auth.needsOnboarding]);

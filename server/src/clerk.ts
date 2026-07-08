@@ -23,10 +23,18 @@ export async function verifyClerkToken(token: string): Promise<ClerkIdentity> {
   const claims = await verifyToken(token, { secretKey });
   const clerkId = claims.sub;
   const user = await clerkClient.users.getUser(clerkId);
+  const primaryEmail = user.primaryEmailAddress;
   const email =
-    user.primaryEmailAddress?.emailAddress ??
+    primaryEmail?.emailAddress ??
     user.emailAddresses[0]?.emailAddress ??
     '';
+
+  // Reject tokens from accounts that haven't verified their email address.
+  const verified = primaryEmail?.verification?.status === 'verified';
+  if (!verified) {
+    throw new Error('Email address is not verified. Please verify your email before signing in.');
+  }
+
   const name =
     [user.firstName, user.lastName].filter(Boolean).join(' ').trim() ||
     user.username ||
