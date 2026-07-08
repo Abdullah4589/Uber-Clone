@@ -7,9 +7,10 @@ export const emailEnabled = !!(user && pass);
 
 const transporter = emailEnabled
   ? nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // STARTTLS — port 465 is often blocked on cloud hosts
       auth: { user, pass },
-      // Hard timeouts so a Gmail hiccup never hangs the request forever.
       connectionTimeout: 8_000,
       greetingTimeout: 8_000,
       socketTimeout: 10_000,
