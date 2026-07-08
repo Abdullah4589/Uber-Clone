@@ -13,6 +13,7 @@ interface AuthCtx {
   loading: boolean;
   needsOnboarding: boolean;
   login: (email: string, password: string) => Promise<UserPublic>;
+  register: (name: string, email: string, password: string, role: 'RIDER' | 'DRIVER', vehicle?: string) => Promise<UserPublic>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (email: string, code: string, password: string) => Promise<UserPublic>;
   completeOnboarding: (role: 'RIDER' | 'DRIVER', vehicle?: string) => Promise<UserPublic>;
@@ -62,6 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const r = await api.post('/auth/login', { email, password });
+    applySession(r.data.token, r.data.user);
+    return r.data.user as UserPublic;
+  };
+
+  const register = async (name: string, email: string, password: string, role: 'RIDER' | 'DRIVER', vehicle?: string) => {
+    const r = await api.post('/auth/register', { name, email, password, role, vehicle });
     applySession(r.data.token, r.data.user);
     return r.data.user as UserPublic;
   };
@@ -134,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         needsOnboarding,
         login,
+        register,
         forgotPassword,
         resetPassword,
         completeOnboarding,
