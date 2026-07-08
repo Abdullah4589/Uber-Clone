@@ -1,5 +1,4 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import type { UserPublic } from '@uber-clone/shared';
 import { ToastHost } from '../components/Toast';
 import { useAuth } from '../lib/auth';
@@ -67,8 +66,6 @@ export function App() {
         path="/agency-owner/*"
         element={user?.role === 'ADMIN' ? <AdminApp /> : <Navigate to="/login" />}
       />
-        {/* OAuth redirect handler — Clerk sends users here after social sign-in */}
-        <Route path="/sso-callback" element={<AuthenticateWithRedirectCallback />} />
         <Route path="*" element={<Navigate to={homeFor(user)} />} />
       </Routes>
     </>
