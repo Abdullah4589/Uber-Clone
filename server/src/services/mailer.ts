@@ -1,24 +1,33 @@
-import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 
-const apiKey = process.env.SENDGRID_API_KEY;
-export const emailEnabled = !!apiKey;
+const user = process.env.EMAIL_USER;
+const pass = process.env.EMAIL_PASS;
 
-if (apiKey) sgMail.setApiKey(apiKey);
+export const emailEnabled = !!(user && pass);
 
-// Must match the sender email you verified in SendGrid Single Sender Verification.
-const FROM = process.env.SENDGRID_FROM ?? 'abdullahhaleem530@gmail.com';
+const transporter = emailEnabled
+  ? nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: { user, pass },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 15_000,
+    })
+  : null;
 
 export async function sendPasswordResetEmail(to: string, code: string): Promise<void> {
-  if (!apiKey) {
-    console.log(`[mailer] no SENDGRID_API_KEY — reset code for ${to}: ${code}`);
+  if (!transporter) {
+    console.log(`[mailer] no credentials — reset code for ${to}: ${code}`);
     return;
   }
 
-  await sgMail.send({
-    from: { name: 'RideShare PK', email: FROM },
+  await transporter.sendMail({
+    from: `"RideShare PK" <${user}>`,
     to,
     subject: 'Your RideShare PK password reset code',
-    text: `Your password reset code is: ${code}\n\nThis code expires in 10 minutes. If you did not request this, ignore this email.`,
+    text: `Your password reset code is: ${code}\n\nExpires in 10 minutes.`,
     html: `
       <div style="font-family:sans-serif;max-width:420px;margin:auto;padding:32px;background:#1a1a1a;color:#f0f0f0;border-radius:12px">
         <div style="text-align:center;font-size:36px;margin-bottom:8px">🛺</div>
